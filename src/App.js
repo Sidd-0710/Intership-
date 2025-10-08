@@ -1,7 +1,12 @@
-export default function App() {
+import React from 'react';
+import LoginFlow from './components/LoginFlow';
+
+function App() {
   return (
-    <h1 className="text-3xl00 font-bold underline bg-red-500 ">
-      Hello world! fuck you
-    </h1>
-  )
+    <div className="App">
+      <LoginFlow />
+    </div>
+  );
 }
+
+export default App;
