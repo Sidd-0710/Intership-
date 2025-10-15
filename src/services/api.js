@@ -1,65 +1,105 @@
-// Import axios for making HTTP requests
-import axios from 'axios';
+const API_BASE_URL = 'https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth';
 
-// Your API base URL - REPLACE THIS with your actual API
-const API_BASE_URL = 'https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/getotpend?mobile_number=Mobile_Number';
-
-// You can also use environment variables (more secure)
-// const API_BASE_URL = process.env.REACT_APP_API_URL;
-
-/**
- * Request OTP for a mobile number
- * @param {string} mobile - The mobile number
- * @returns {Promise} - API response
- */
-export const requestOTP = async (mobile) => {
+// Get OTP for mobile number
+export const getOTP = async (mobileNumber) => {
   try {
-    // axios.post() sends a POST request
-    // First parameter: URL
-    // Second parameter: Data to send (body)
-    const response = await axios.post(`${API_BASE_URL}/send-otp`, {
-      mobile: mobile,
-      countryCode: '+91'
+    const response = await fetch(`${API_BASE_URL}/getotpend?mobile_number=${mobileNumber}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
     
-    // If successful, return the data
-    return response.data;
-    
+    if (response.ok) {
+      // Check if response has content
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const data = await response.json();
+          return { success: true, data };
+        } catch (jsonError) {
+          return { success: true, data: {} };
+        }
+      } else {
+        // Response is not JSON, treat as success
+        return { success: true, data: {} };
+      }
+    } else {
+      // Handle error response
+      const contentType = response.headers.get('content-type');
+      let errorMessage;
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || 'Failed to send OTP';
+        } catch (jsonError) {
+          errorMessage = `Failed to send OTP (Status: ${response.status})`;
+        }
+      } else {
+        try {
+          const textError = await response.text();
+          errorMessage = textError || `Failed to send OTP (Status: ${response.status})`;
+        } catch (textError) {
+          errorMessage = `Failed to send OTP (Status: ${response.status})`;
+        }
+      }
+      
+      return { success: false, error: errorMessage };
+    }
   } catch (error) {
-    // If error occurs, throw a user-friendly message
-    // error.response?.data = data from server (if available)
-    // The ? is optional chaining (won't crash if undefined)
-    throw error.response?.data?.message || 'Failed to send OTP. Please try again.';
+    return { success: false, error: 'Network error. Please try again.' };
   }
 };
 
-/**
- * Verify OTP
- * @param {string} mobile - The mobile number
- * @param {string} otp - The OTP code
- * @returns {Promise} - API response with token
- */
-export const verifyOTP = async (mobile, otp) => {
+// Verify OTP
+export const verifyOTP = async (mobileNumber, otp, workshopId = '4317') => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/verify-otp`, {
-      mobile: mobile,
-      otp: otp
+    const response = await fetch(`${API_BASE_URL}/verify_otp_end?mobile_number=${mobileNumber}&otp=${otp}&workshop_id=${workshopId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
     
-    // Return the response (usually contains token)
-    return response.data;
-    
+    if (response.ok) {
+      // Check if response has content
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const data = await response.json();
+          return { success: true, data };
+        } catch (jsonError) {
+          return { success: true, data: {} };
+        }
+      } else {
+        // Response is not JSON, treat as success
+        return { success: true, data: {} };
+      }
+    } else {
+      // Handle error response
+      const contentType = response.headers.get('content-type');
+      let errorMessage;
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || 'Invalid OTP';
+        } catch (jsonError) {
+          errorMessage = `Invalid OTP (Status: ${response.status})`;
+        }
+      } else {
+        try {
+          const textError = await response.text();
+          errorMessage = textError || `Invalid OTP (Status: ${response.status})`;
+        } catch (textError) {
+          errorMessage = `Invalid OTP (Status: ${response.status})`;
+        }
+      }
+      
+      return { success: false, error: errorMessage };
+    }
   } catch (error) {
-    throw error.response?.data?.message || 'Invalid OTP. Please try again.';
+    return { success: false, error: 'Network error. Please try again.' };
   }
-};
-
-/**
- * Resend OTP
- * @param {string} mobile - The mobile number
- * @returns {Promise} - API response
- */
-export const resendOTP = async (mobile) => {
-  // Reuse the requestOTP function
-  return await requestOTP(mobile);
 };

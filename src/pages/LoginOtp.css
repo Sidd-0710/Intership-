@@ -1,0 +1,108 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f4f5f7;
+  font-family: Arial, sans-serif;
+}
+
+.card {
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 350px;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+label {
+  display: block;
+  text-align: left;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #444;
+}
+
+input[type="number"],
+.otp-boxes input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+}
+
+.otp-boxes {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.otp-boxes input {
+  width: 60px;
+  height: 60px;
+  font-size: 20px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #e63946;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+button:hover {
+  background-color: #d62828;
+}
+
+.back-btn {
+  background: none;
+  color: #666;
+  text-decoration: underline;
+}
+
+.resend-text {
+  font-size: 14px;
+  color: #555;
+  margin: 10px 0;
+}
+
+.resend-text span {
+  color: #e63946;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.error-message {
+  color: #e63946;
+  font-size: 14px;
+  margin-bottom: 15px;
+  padding: 8px;
+  background-color: #ffe6e6;
+  border-radius: 4px;
+  border: 1px solid #ffcccc;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
