@@ -1,156 +1,253 @@
-import React, { useState, useEffect } from "react";
-import "./index.css";
+import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
+import './index.css';
 
-function App() {
-  const [step, setStep] = useState("login");
-  const [mobile, setMobile] = useState("");
-  const [otp, setOtp] = useState(["", "", "", ""]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+// --- SVG Icon Components ---
 
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      setStep("home");
-      const parsed = JSON.parse(user);
-      setMobile(parsed.mobile);
-    }
-  }, []);
+const VehicleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-red-500">
+        <path d="M19 17h2v-5h-4v-1a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3v1H1v5h2" />
+        <path d="M19 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+        <path d="M5 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+        <path d="M12 17H6" />
+        <path d="M18 17h-5" />
+        <path d="M15 8h-6" />
+    </svg>
+);
 
-  // ✅ Send OTP API
-  const handleGetOtp = async () => {
-    setError("");
-    if (mobile.length !== 10) {
-      setError("Please enter a valid 10-digit mobile number.");
-      return;
-    }
+const LockIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-red-500">
+    <rect x="7" y="10" width="10" height="8" rx="2" ry="2"></rect>
+    <path d="M9 10V7a3 3 0 0 1 6 0v3"></path>
+    <path d="M5 20V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"></path>
+  </svg>
+);
 
-    if (mobile !== "9028610795") {
-      setError("Invalid number. Please use a registered number.");
-      return;
-    }
+const BackArrowIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+        <path d="M19 12H5" />
+        <path d="m12 19-7-7 7-7" />
+    </svg>
+);
 
-    setLoading(true);
-    try {
-      await fetch(
-        `https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/getotpend?mobile_number=${mobile}`
-      );
-      setStep("otp");
-    } catch (err) {
-      setError("Failed to send OTP. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+// --- UI Components ---
 
-  // ✅ Verify OTP API
-  const handleVerifyOtp = async () => {
-    setError("");
-    const otpCode = otp.join("");
-
-    if (otpCode.length !== 4) {
-      setError("Please enter a 4-digit OTP.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Always treat 1234 as valid OTP
-      if (mobile === "9028610795" && otpCode === "1234") {
-        await fetch(
-          `https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/verify_otp_end?mobile_number=${mobile}&otp=${otpCode}&workshop_id=4317`,
-          { method: "POST" }
-        );
-
-        localStorage.setItem("user", JSON.stringify({ mobile }));
-        setStep("home");
-      } else {
-        setError("Invalid OTP. Please try again.");
-      }
-    } catch (err) {
-      setError("Invalid OTP or verification failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOtpChange = (value, index) => {
-    if (/^\d?$/.test(value)) {
-      const newOtp = [...otp];
-      newOtp[index] = value;
-      setOtp(newOtp);
-      if (value && index < 3) {
-        document.getElementById(`otp-${index + 1}`).focus();
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    setStep("login");
-    setMobile("");
-    setOtp(["", "", "", ""]);
-  };
-
-  return (
-    <div className="container">
-      {step === "login" && (
-        <div className="card">
-          <h2>Login</h2>
-          <p>Enter your mobile number to receive OTP</p>
-          <input
-            type="text"
-            maxLength="10"
-            value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
-            placeholder="Enter Mobile Number"
-          />
-          {error && <div className="error">{error}</div>}
-          <button onClick={handleGetOtp} disabled={loading}>
-            {loading ? "Sending..." : "Get OTP"}
-          </button>
-        </div>
-      )}
-
-      {step === "otp" && (
-        <div className="card">
-          <h2>Verify OTP</h2>
-          <p>
-            Enter the 4-digit code sent to <b>+91 {mobile}</b>
-          </p>
-          <div className="otp-inputs">
-            {otp.map((d, i) => (
-              <input
-                key={i}
-                id={`otp-${i}`}
-                maxLength="1"
-                value={d}
-                onChange={(e) => handleOtpChange(e.target.value, i)}
-              />
-            ))}
-          </div>
-          {error && <div className="error">{error}</div>}
-          <p className="resend">
-            Didn’t get the code? <span onClick={handleGetOtp}>Resend OTP</span>
-          </p>
-          <button onClick={handleVerifyOtp} disabled={loading}>
-            {loading ? "Verifying..." : "Verify OTP"}
-          </button>
-          <p className="change" onClick={() => setStep("login")}>
-            Change Mobile Number
-          </p>
-        </div>
-      )}
-
-      {step === "home" && (
-        <div className="card success">
-          <h2>Welcome 🎉</h2>
-          <p>You are logged in with +91 {mobile}</p>
-          <button onClick={handleLogout}>Logout</button>
-        </div>
-      )}
+const LoadingSpinner = () => (
+    <div className="absolute inset-0 bg-white bg-opacity-75 flex justify-center items-center rounded-2xl z-10">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
     </div>
-  );
+);
+
+// --- Screen Components ---
+
+const GetStartedScreen = ({ setScreen, phoneNumber, setPhoneNumber }) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const handlePhoneNumberChange = (e) => {
+        const value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 10) {
+            setPhoneNumber(value);
+            setError(null);
+        }
+    };
+
+    const handleRequestOtp = async () => {
+        const isValidPhoneNumber = /^[6-9]\d{9}$/.test(phoneNumber);
+        if (!isValidPhoneNumber) {
+            setError("Please enter a valid mobile number starting with 6, 7, 8, or 9.");
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        try {
+            const url = `https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/getotpend?mobile_number=${phoneNumber}`;
+            await axios.get(url);
+            setScreen('verifyOtp');
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || err.message || 'Failed to request OTP.';
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="relative w-full max-w-sm mx-auto text-center p-8 bg-white rounded-2xl shadow-xl transition-all">
+            {isLoading && <LoadingSpinner />}
+            <div className="flex justify-center mb-8">
+                <div className="bg-red-200 rounded-full p-6">
+                    <VehicleIcon />
+                </div>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Get Started</h1>
+            <p className="text-gray-500 mb-8">We'll send a one-time password to your mobile number.</p>
+            <div className="flex items-center border border-gray-300 rounded-lg p-3 w-full mb-6 focus-within:border-red-600 focus-within:ring-1 focus-within:ring-red-600 transition-all">
+                <span className="text-gray-500 px-3 border-r border-gray-300">+91</span>
+                <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={handlePhoneNumberChange}
+                    placeholder="Your mobile number"
+                    className="flex-1 pl-4 bg-transparent outline-none text-gray-800 tracking-wider"
+                />
+            </div>
+            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+            <button
+                onClick={handleRequestOtp}
+                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-105  disabled:cursor-not-allowed"
+                disabled={phoneNumber.length !== 10 || isLoading}
+            >
+                Request OTP
+            </button>
+        </div>
+    );
+};
+
+const VerifyOtpScreen = ({ setScreen, phoneNumber }) => {
+    const [otp, setOtp] = useState(['', '', '', '']);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const inputRefs = useRef([...Array(4)].map(() => React.createRef()));
+
+    useEffect(() => {
+        inputRefs.current[0].current.focus();
+    }, []);
+
+    const handleOtpChange = (index, value) => {
+        const newOtp = [...otp];
+        newOtp[index] = value.replace(/\D/g, '');
+        setOtp(newOtp);
+        if (newOtp[index] && index < 3) {
+            inputRefs.current[index + 1].current.focus();
+        }
+    };
+
+    const handleKeyDown = (index, e) => {
+        if (e.key === 'Backspace' && !otp[index] && index > 0) {
+            inputRefs.current[index - 1].current.focus();
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        setIsLoading(true);
+        setError(null);
+        const otpCode = otp.join('');
+        const workshopId = 4317;
+
+        try {
+            const url = `https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/verify_otp_end?mobile_number=${phoneNumber}&otp=${otpCode}&workshop_id=${workshopId}`;
+            await axios.post(url, {});
+            setScreen('dashboard');
+        } catch (err) {
+            let displayError = "An unknown error occurred. Please try again.";
+            if (err.response?.data?.message) {
+                displayError = err.response.data.message;
+            } else if (typeof err.response?.data === 'string') {
+                displayError = err.response.data;
+            } else if (err.message) {
+                displayError = err.message;
+            }
+            setError(displayError);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const isOtpComplete = otp.every(digit => digit.length === 1);
+
+    return (
+        <div className="relative w-full max-w-sm mx-auto text-center p-8 bg-white rounded-2xl shadow-xl transition-all">
+            {isLoading && <LoadingSpinner />}
+            <button onClick={() => setScreen('getStarted')} className="absolute top-6 left-6 text-gray-500 hover:text-gray-800">
+                <BackArrowIcon />
+            </button>
+            <div className="flex justify-center mb-6 mt-4">
+                <div className="bg-red-200 rounded-full p-6">
+                    <LockIcon />
+                </div>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Verify OTP</h1>
+            <p className="text-gray-500 mb-8 leading-relaxed">
+                Enter the 4-digit code sent to you at
+                <br />
+                <span className="font-semibold text-gray-700">+91 {phoneNumber}</span>
+            </p>
+            <div className="flex justify-center space-x-3 mb-6">
+                {otp.map((digit, index) => (
+                    <input
+                        key={index}
+                        ref={inputRefs.current[index]}
+                        type="tel"
+                        maxLength="1"
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        className="w-14 h-14 text-center border border-gray-300 rounded-lg text-2xl font-bold focus:ring-2 focus:ring-red-600 focus:border-red-600 outline-none transition-colors"
+                    />
+                ))}
+            </div>
+            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+            <p className="text-sm text-gray-500 mb-8">
+                Didn't receive the code?{' '}
+                <button className="font-semibold text-red-600 hover:underline">Resend OTP</button>
+            </p>
+            <button
+                onClick={handleVerifyOtp}
+                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-lg hover:bg-red-600 transition-all duration-300 disabled:cursor-not-allowed"
+                disabled={!isOtpComplete || isLoading}
+            >
+                Verify OTP
+            </button>
+            <button onClick={() => setScreen('getStarted')} className="mt-4 text-sm font-semibold text-gray-500 hover:text-gray-600">
+                Change Mobile Number
+            </button>
+        </div>
+    );
+};
+
+const DashboardScreen = ({ phoneNumber }) => {
+    return (
+        <div className="w-full max-w-md mx-auto text-center p-8 bg-white rounded-2xl shadow-xl">
+            <div className="flex justify-center mb-6">
+                 <div className="bg-green-100 rounded-full p-6">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                 </div>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Login Successful!</h1>
+            <p className="text-gray-500">
+                Welcome! Logged in with <span className="font-medium text-gray-700">+91 {phoneNumber}</span>.
+            </p>
+        </div>
+    );
+};
+
+// --- Main App Component ---
+
+export default function App() {
+    const [screen, setScreen] = useState('getStarted');
+    const [phoneNumber, setPhoneNumber] = useState('');
+
+    return (
+        <main className="bg-gray-50 min-h-screen flex items-center justify-center p-4 font-sans">
+            {screen === 'getStarted' && (
+                <GetStartedScreen
+                    setScreen={setScreen}
+                    phoneNumber={phoneNumber}
+                    setPhoneNumber={setPhoneNumber}
+                />
+            )}
+            {screen === 'verifyOtp' && (
+                <VerifyOtpScreen
+                    setScreen={setScreen}
+                    phoneNumber={phoneNumber}
+                />
+            )}
+            {screen === 'dashboard' && (
+                <DashboardScreen phoneNumber={phoneNumber} />
+            )}
+        </main>
+    );
 }
 
-export default App;
