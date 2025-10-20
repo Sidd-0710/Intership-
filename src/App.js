@@ -5,15 +5,23 @@ import './index.css';
 // --- SVG Icon Components ---
 
 const VehicleIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-red-500">
-        <path d="M19 17h2v-5h-4v-1a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3v1H1v5h2" />
-        <path d="M19 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
-        <path d="M5 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
-        <path d="M12 17H6" />
-        <path d="M18 17h-5" />
-        <path d="M15 8h-6" />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="1em"
+      height="1em"
+        className="w-16 h-16 text-red-500"
+    >
+      <path
+        fill="currentColor"
+        d="M19 20H5v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V11l2.48-5.788A2 2 0 0 1 6.32 4h11.36a2 2 0 0 1 1.838 1.212L22 11v10a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm1-7H4v5h16zM4.176 11h15.648l-2.143-5H6.32zM6.5 17a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3m11 0a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3"
+      ></path>
     </svg>
 );
+
+
+
+
 
 const LockIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-red-500">
