@@ -20,9 +20,6 @@ const VehicleIcon = () => (
 );
 
 
-
-
-
 const LockIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-red-500">
     <rect x="7" y="10" width="10" height="8" rx="2" ry="2"></rect>
@@ -36,6 +33,7 @@ const BackArrowIcon = () => (
         <path d="M19 12H5" />
         <path d="m12 19-7-7 7-7" />
     </svg>
+
 );
 
 // --- UI Components ---
@@ -69,6 +67,8 @@ const GetStartedScreen = ({ setScreen, phoneNumber, setPhoneNumber }) => {
 
         setIsLoading(true);
         setError(null);
+        
+        // --- REAL API CALL ---
         try {
             const url = `https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/getotpend?mobile_number=${phoneNumber}`;
             await axios.get(url);
@@ -79,6 +79,7 @@ const GetStartedScreen = ({ setScreen, phoneNumber, setPhoneNumber }) => {
         } finally {
             setIsLoading(false);
         }
+        
     };
 
     return (
@@ -104,7 +105,7 @@ const GetStartedScreen = ({ setScreen, phoneNumber, setPhoneNumber }) => {
             {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
             <button
                 onClick={handleRequestOtp}
-                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-105  disabled:cursor-not-allowed"
+                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 disabled:bg-red-300 disabled:cursor-not-allowed"
                 disabled={phoneNumber.length !== 10 || isLoading}
             >
                 Request OTP
@@ -124,6 +125,7 @@ const VerifyOtpScreen = ({ setScreen, phoneNumber }) => {
     }, []);
 
     const handleOtpChange = (index, value) => {
+        if (error) setError(null); // Clear error on new input
         const newOtp = [...otp];
         newOtp[index] = value.replace(/\D/g, '');
         setOtp(newOtp);
@@ -144,9 +146,14 @@ const VerifyOtpScreen = ({ setScreen, phoneNumber }) => {
         const otpCode = otp.join('');
         const workshopId = 4317;
 
+        // --- REAL API CALL (Re-enabled) ---
         try {
             const url = `https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/verify_otp_end?mobile_number=${phoneNumber}&otp=${otpCode}&workshop_id=${workshopId}`;
             await axios.post(url, {});
+            
+            // --- Save to localStorage on success ---
+            localStorage.setItem('loggedInUserPhone', phoneNumber);
+
             setScreen('dashboard');
         } catch (err) {
             let displayError = "An unknown error occurred. Please try again.";
@@ -159,7 +166,7 @@ const VerifyOtpScreen = ({ setScreen, phoneNumber }) => {
             }
             setError(displayError);
         } finally {
-            setIsLoading(false);
+            setIsLoading(false); // Re-enabled for live API
         }
     };
 
@@ -192,7 +199,11 @@ const VerifyOtpScreen = ({ setScreen, phoneNumber }) => {
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(index, e)}
-                        className="w-14 h-14 text-center border border-gray-300 rounded-lg text-2xl font-bold focus:ring-2 focus:ring-red-600 focus:border-red-600 outline-none transition-colors"
+                        className={`w-14 h-14 text-center border rounded-lg text-2xl font-bold outline-none transition-colors ${
+                            error 
+                                ? 'border-red-500 focus:ring-red-500' 
+                                : 'border-gray-300 focus:ring-red-600 focus:border-red-600'
+                        }`}
                     />
                 ))}
             </div>
@@ -203,7 +214,7 @@ const VerifyOtpScreen = ({ setScreen, phoneNumber }) => {
             </p>
             <button
                 onClick={handleVerifyOtp}
-                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-lg hover:bg-red-600 transition-all duration-300 disabled:cursor-not-allowed"
+                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 disabled:bg-red-300 disabled:cursor-not-allowed"
                 disabled={!isOtpComplete || isLoading}
             >
                 Verify OTP
@@ -215,7 +226,16 @@ const VerifyOtpScreen = ({ setScreen, phoneNumber }) => {
     );
 };
 
-const DashboardScreen = ({ phoneNumber }) => {
+const DashboardScreen = ({ phoneNumber, setScreen, setPhoneNumber }) => {
+
+    const handleLogout = () => {
+        // --- Clear from localStorage on logout ---
+        localStorage.removeItem('loggedInUserPhone'); 
+        
+        setPhoneNumber(''); // Clear the phone number from state
+        setScreen('getStarted'); // Go back to the login screen
+    };
+
     return (
         <div className="w-full max-w-md mx-auto text-center p-8 bg-white rounded-2xl shadow-xl">
             <div className="flex justify-center mb-6">
@@ -224,9 +244,15 @@ const DashboardScreen = ({ phoneNumber }) => {
                  </div>
             </div>
             <h1 className="text-2xl font-bold text-gray-800 mb-2">Login Successful!</h1>
-            <p className="text-gray-500">
+            <p className="text-gray-500 mb-8">
                 Welcome! Logged in with <span className="font-medium text-gray-700">+91 {phoneNumber}</span>.
             </p>
+            <button
+                onClick={handleLogout}
+                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105"
+            >
+                Logout
+            </button>
         </div>
     );
 };
@@ -234,11 +260,30 @@ const DashboardScreen = ({ phoneNumber }) => {
 // --- Main App Component ---
 
 export default function App() {
-    const [screen, setScreen] = useState('getStarted');
+    // Start with a 'loading' state to check localStorage
+    const [screen, setScreen] = useState('loading'); 
     const [phoneNumber, setPhoneNumber] = useState('');
+
+    // --- Check localStorage on initial app load ---
+    useEffect(() => {
+        const savedPhone = localStorage.getItem('loggedInUserPhone');
+        if (savedPhone) {
+            setPhoneNumber(savedPhone);
+            setScreen('dashboard');
+        } else {
+            setScreen('getStarted');
+        }
+    }, []); // Empty array means this runs only once on mount
 
     return (
         <main className="bg-gray-50 min-h-screen flex items-center justify-center p-4 font-sans">
+            {/* Show a loading indicator while checking storage */}
+            {screen === 'loading' && (
+                <div className="flex justify-center items-center h-screen">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-500"></div>
+                </div>
+            )}
+            
             {screen === 'getStarted' && (
                 <GetStartedScreen
                     setScreen={setScreen}
@@ -253,7 +298,11 @@ export default function App() {
                 />
             )}
             {screen === 'dashboard' && (
-                <DashboardScreen phoneNumber={phoneNumber} />
+                <DashboardScreen 
+                    phoneNumber={phoneNumber} 
+                    setScreen={setScreen} 
+                    setPhoneNumber={setPhoneNumber} 
+                />
             )}
         </main>
     );
