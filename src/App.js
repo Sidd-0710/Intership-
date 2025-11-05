@@ -104,8 +104,16 @@ const GetStartedScreen = ({ setScreen, phoneNumber, setPhoneNumber }) => {
 
     try {
       const url = `https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/getotpend?mobile_number=${phoneNumber}`;
-      await axios.get(url);
-      setScreen('verifyOtp');
+      const response =  await axios.get(url);
+      if (response.data?.success) {
+        setScreen('verifyOtp');
+        console.log('OTP Request Message:', response.data.data.otp);
+      }
+      console.log('OTP Request Response:', response);
+      
+    //   setScreen('verifyOtp');
+
+      
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to request OTP.';
       setError(errorMessage);
@@ -182,24 +190,14 @@ const VerifyOtpScreen = ({ setScreen, phoneNumber, onVerified }) => {
       const url = `https://d3631n9ke34438.cloudfront.net/api/v1/web_end_user/auth/verify_otp_end?mobile_number=${phoneNumber}&otp=${otpCode}&workshop_id=${workshopId}`;
       const response = await axios.post(url, {});
       console.log('OTP Verification Response:', response);
+        if (response.data?.success) {
+            const data = response.data.data;
+            localStorage.setItem('user',JSON.stringify(data));
+             setScreen('dashboard');
+        }
 
-      // assume response.data contains { token: '...', user: { ... } }
-      const data = response.data || {};
-      const userObj = {
-        phone: phoneNumber,
-        token: data.token || data.access_token || null,
-        user: data.user || data.data || null,
-        loggedAt: new Date().toISOString(),
-        // optional: expiresAt: Date.now() + 1000 * 60 * 60 * 24 // 24 hours
-      };
-
-      // Save to localStorage using helper (and set axios header)
-      saveUserToStorage(userObj);
-
-      // inform parent (App) about verified user
-      if (typeof onVerified === 'function') onVerified(userObj);
-
-      setScreen('dashboard');
+        
+      
     } catch (err) {
       let displayError = 'An unknown error occurred. Please try again.';
       if (err.response?.data?.message) {
